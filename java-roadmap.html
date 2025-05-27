@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plano Java Intensivo - Do Zero ao Emprego</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .phase-card {
+            transition: all 0.3s ease;
+        }
+        .phase-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        .objective-item {
+            transition: all 0.2s ease;
+        }
+        .objective-item:hover {
+            transform: translateX(4px);
+        }
+        .progress-bar {
+            transition: width 0.5s ease;
+        }
+        .completed-item {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Ícones SVG personalizados
+        const CheckCircleIcon = () => (
+            <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+        );
+
+        const CircleIcon = () => (
+            <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"></circle>
+            </svg>
+        );
+
+        const BookIcon = () => (
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/>
+            </svg>
+        );
+
+        const CodeIcon = () => (
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd"/>
+            </svg>
+        );
+
+        const TargetIcon = () => (
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd"/>
+            </svg>
+        );
+
+        const CalendarIcon = () => (
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd"/>
+            </svg>
+        );
+
+        const BriefcaseIcon = () => (
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h2zm4-3a1 1 0 00-1 1v1h2V4a1 1 0 00-1-1zM8 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm4 0a1 1 0 112 0v4a1 1 0 11-2 0V8z" clipRule="evenodd"/>
+            </svg>
+        );
+
+        const JavaLearningRoadmap = () => {
+            const [completedItems, setCompletedItems] = useState(new Set());
+
+            // Carregar progresso do localStorage
+            useEffect(() => {
+                const savedProgress = localStorage.getItem('javaRoadmapProgress');
+                if (savedProgress) {
+                    setCompletedItems(new Set(JSON.parse(savedProgress)));
+                }
+            }, []);
+
+            // Salvar progresso no localStorage
+            useEffect(() => {
+                localStorage.setItem('javaRoadmapProgress', JSON.stringify([...completedItems]));
+            }, [completedItems]);
+
+            const toggleComplete = (id) => {
+                const newCompleted = new Set(completedItems);
+                if (newCompleted.has(id)) {
+                    newCompleted.delete(id);
+                } else {
+                    newCompleted.add(id);
+                }
+                setCompletedItems(newCompleted);
+            };
+
+            const phases = [
+                {
+                    id: 1,
+                    title: "Fundamentos Intensivos (Semanas 1-2)",
+                    color: "bg-blue-500",
+                    icon: <BookIcon />,
+                    objectives: [
+                        { id: "fund1", text: "Dia 1: Instalar JDK, configurar IDE + sintaxe básica (4h teoria + 3h prática)" },
+                        { id: "fund2", text: "Dia 2-3: Variáveis, operadores, estruturas condicionais (200+ exercícios)" },
+                        { id: "fund3", text: "Dia 4-5: Loops e arrays - resolver 100 problemas algoritmos básicos" },
+                        { id: "fund4", text: "Dia 6-7: Strings e métodos - implementar 50 funções utilitárias" },
+                        { id: "fund5", text: "Semana 2: Projeto inovador: Analisador de padrões em senhas + gerador inteligente" },
+                        { id: "fund6", text: "Extra: Começar algoritmos no LeetCode (problemas Easy)" }
+                    ]
+                },
+                {
+                    id: 2,
+                    title: "Orientação a Objetos (Semanas 3-4)",
+                    color: "bg-green-500",
+                    icon: <CodeIcon />,
+                    objectives: [
+                        { id: "oo1", text: "Dias 1-2: Classes, objetos, construtores - criar 20 classes diferentes" },
+                        { id: "oo2", text: "Dias 3-4: Encapsulamento e modificadores - refatorar códigos anteriores" },
+                        { id: "oo3", text: "Dias 5-6: Herança e polimorfismo - hierarquia complexa de classes" },
+                        { id: "oo4", text: "Dia 7: Interfaces e classes abstratas - padrões de design" },
+                        { id: "oo5", text: "Semana 4: Projeto inovador: Sistema de reservas com algoritmo de otimização" },
+                        { id: "oo6", text: "Extra: Design patterns básicos (Singleton, Factory)" }
+                    ]
+                },
+                {
+                    id: 3,
+                    title: "APIs e Collections (Semana 5)",
+                    color: "bg-purple-500",
+                    icon: <TargetIcon />,
+                    objectives: [
+                        { id: "api1", text: "Dias 1-2: Collections completas (List, Set, Map) + 100 exercícios" },
+                        { id: "api2", text: "Dia 3: Generics e Wildcards - implementar estruturas de dados" },
+                        { id: "api3", text: "Dia 4: Stream API intensivo - 50 problemas funcionais" },
+                        { id: "api4", text: "Dia 5: File I/O + datas - manipular arquivos CSV, JSON" },
+                        { id: "api5", text: "Fim da semana: Projeto inovador: Analisador de sentimentos em tempo real" },
+                        { id: "api6", text: "Extra: Multithreading básico e concorrência" }
+                    ]
+                },
+                {
+                    id: 4,
+                    title: "Banco de Dados (Semana 6)",
+                    color: "bg-orange-500",
+                    icon: <CalendarIcon />,
+                    objectives: [
+                        { id: "db1", text: "Dias 1-2: SQL intensivo - 200 queries diferentes (3h teoria + 4h prática)" },
+                        { id: "db2", text: "Dia 3: JDBC completo - conectar múltiplos BDs" },
+                        { id: "db3", text: "Dia 4: Prepared Statements, transactions, pool de conexões" },
+                        { id: "db4", text: "Dia 5: Padrão DAO + Repository - arquitetura em camadas" },
+                        { id: "db5", text: "Fim da semana: JPA/Hibernate básico" },
+                        { id: "db6", text: "Projeto inovador: Sistema de matching inteligente (algoritmo de compatibilidade)" }
+                    ]
+                },
+                {
+                    id: 5,
+                    title: "Spring Framework (Semanas 7-8)",
+                    color: "bg-teal-500",
+                    icon: <CodeIcon />,
+                    objectives: [
+                        { id: "spring1", text: "Dias 1-2: Spring Boot do zero - criar 5 APIs diferentes" },
+                        { id: "spring2", text: "Dias 3-4: REST completo - todos os verbos HTTP + status codes" },
+                        { id: "spring3", text: "Dia 5: Injeção de dependência e configurações avançadas" },
+                        { id: "spring4", text: "Semana 8: Spring Data JPA + Spring Security básico" },
+                        { id: "spring5", text: "Validações, paginação, filtros, documentação automática" },
+                        { id: "spring6", text: "Projeto final: API de recomendações personalizadas com ML básico" }
+                    ]
+                },
+                {
+                    id: 6,
+                    title: "Preparação Intensiva (Semanas 9-10)",
+                    color: "bg-red-500",
+                    icon: <BriefcaseIcon />,
+                    objectives: [
+                        { id: "job1", text: "Dias 1-2: Testes unitários - 100% cobertura projetos anteriores" },
+                        { id: "job2", text: "Dia 3: Git avançado - workflows, branches, merge conflicts" },
+                        { id: "job3", text: "Dia 4: Clean Code + refactoring de todos os projetos" },
+                        { id: "job4", text: "Dia 5: Docker, CI/CD básico, deploy em produção" },
+                        { id: "job5", text: "Semana 10: Portfolio profissional - 5 projetos no GitHub" },
+                        { id: "job6", text: "Preparação entrevistas: mock interviews + algoritmos médios" },
+                        { id: "job7", text: "Candidaturas: aplicar para 50+ vagas + networking LinkedIn" }
+                    ]
+                }
+            ];
+
+            const getTotalProgress = () => {
+                const totalObjectives = phases.reduce((sum, phase) => sum + phase.objectives.length, 0);
+                const completedObjectives = completedItems.size;
+                return Math.round((completedObjectives / totalObjectives) * 100);
+            };
+
+            const getPhaseProgress = (phase) => {
+                const phaseCompleted = phase.objectives.filter(obj => completedItems.has(obj.id)).length;
+                return Math.round((phaseCompleted / phase.objectives.length) * 100);
+            };
+
+            const exportProgress = () => {
+                const data = {
+                    progress: [...completedItems],
+                    exported: new Date().toISOString(),
+                    totalProgress: getTotalProgress()
+                };
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'java-roadmap-progress.json';
+                a.click();
+                URL.revokeObjectURL(url);
+            };
+
+            const importProgress = (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const data = JSON.parse(e.target.result);
+                            setCompletedItems(new Set(data.progress));
+                            alert('Progresso importado com sucesso!');
+                        } catch (error) {
+                            alert('Erro ao importar arquivo. Verifique se é um arquivo válido.');
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            };
+
+            return (
+                <div className="max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen">
+                    <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                        <h1 className="text-4xl font-bold text-gray-800 mb-2">Plano Java Intensivo: Do Zero ao Emprego</h1>
+                        <p className="text-gray-600 mb-4">Cronograma acelerado de 10 semanas (7h/dia) para conseguir sua primeira vaga como desenvolvedor Java</p>
+                        
+                        <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-4 text-white mb-4">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="font-semibold text-lg">Progresso Geral</span>
+                                <span className="text-2xl font-bold">{getTotalProgress()}%</span>
+                            </div>
+                            <div className="w-full bg-white bg-opacity-20 rounded-full h-4">
+                                <div 
+                                    className="bg-white h-4 rounded-full progress-bar"
+                                    style={{ width: `${getTotalProgress()}%` }}
+                                ></div>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-4 flex-wrap">
+                            <button
+                                onClick={exportProgress}
+                                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                            >
+                                📁 Exportar Progresso
+                            </button>
+                            <label className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium cursor-pointer transition-colors">
+                                📂 Importar Progresso
+                                <input
+                                    type="file"
+                                    accept=".json"
+                                    onChange={importProgress}
+                                    className="hidden"
+                                />
+                            </label>
+                            <div className="text-sm text-gray-600 flex items-center">
+                                💾 Progresso salvo automaticamente no navegador
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid gap-6 lg:grid-cols-2">
+                        {phases.map((phase) => (
+                            <div key={phase.id} className="bg-white rounded-lg shadow-lg overflow-hidden phase-card">
+                                <div className={`${phase.color} text-white p-4`}>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center space-x-3">
+                                            {phase.icon}
+                                            <h2 className="text-xl font-bold">{phase.title}</h2>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-sm opacity-90">Progresso</div>
+                                            <div className="text-lg font-bold">{getPhaseProgress(phase)}%</div>
+                                        </div>
+                                    </div>
+                                    <div className="mt-2 bg-white bg-opacity-20 rounded-full h-2">
+                                        <div 
+                                            className="bg-white h-2 rounded-full progress-bar"
+                                            style={{ width: `${getPhaseProgress(phase)}%` }}
+                                        ></div>
+                                    </div>
+                                </div>
+                                
+                                <div className="p-4">
+                                    <div className="space-y-3">
+                                        {phase.objectives.map((objective) => (
+                                            <div 
+                                                key={objective.id}
+                                                className={`flex items-center space-x-3 p-3 rounded-lg border cursor-pointer objective-item ${
+                                                    completedItems.has(objective.id) 
+                                                        ? 'completed-item border-green-200' 
+                                                        : 'border-gray-200 hover:bg-gray-50'
+                                                }`}
+                                                onClick={() => toggleComplete(objective.id)}
+                                            >
+                                                {completedItems.has(objective.id) ? (
+                                                    <CheckCircleIcon />
+                                                ) : (
+                                                    <CircleIcon />
+                                                )}
+                                                <span className={`text-sm ${
+                                                    completedItems.has(objective.id) 
+                                                        ? 'text-green-800 line-through' 
+                                                        : 'text-gray-700'
+                                                }`}>
+                                                    {objective.text}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="mt-8 bg-purple-50 border border-purple-200 rounded-lg p-6">
+                        <h3 className="text-2xl font-bold text-purple-800 mb-4">🚀 Projetos Diferenciados</h3>
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div className="bg-white p-4 rounded-lg border border-purple-100 shadow-sm">
+                                <h4 className="font-bold text-purple-700 mb-2">1. Analisador de Padrões em Senhas</h4>
+                                <p className="text-sm text-purple-600 mb-2">Diferencial: Usa algoritmos de força bruta simulada + análise de entropia</p>
+                                <p className="text-xs text-gray-600">Stack: Java básico + regex + algoritmos</p>
+                            </div>
+                            <div className="bg-white p-4 rounded-lg border border-purple-100 shadow-sm">
+                                <h4 className="font-bold text-purple-700 mb-2">2. Sistema de Reservas com Otimização</h4>
+                                <p className="text-sm text-purple-600 mb-2">Diferencial: Algoritmo próprio para maximizar ocupação vs. satisfação</p>
+                                <p className="text-xs text-gray-600">Stack: POO + estruturas de dados + algoritmos de otimização</p>
+                            </div>
+                            <div className="bg-white p-4 rounded-lg border border-purple-100 shadow-sm">
+                                <h4 className="font-bold text-purple-700 mb-2">3. Analisador de Sentimentos em Tempo Real</h4>
+                                <p className="text-sm text-purple-600 mb-2">Diferencial: Processa texto usando dicionário próprio + peso contextual</p>
+                                <p className="text-xs text-gray-600">Stack: Collections + Stream API + processamento de texto</p>
+                            </div>
+                            <div className="bg-white p-4 rounded-lg border border-purple-100 shadow-sm">
+                                <h4 className="font-bold text-purple-700 mb-2">4. Sistema de Matching Inteligente</h4>
+                                <p className="text-sm text-purple-600 mb-2">Diferencial: Algoritmo de compatibilidade baseado em múltiplos fatores</p>
+                                <p className="text-xs text-gray-600">Stack: BD + JDBC + algoritmos de similaridade</p>
+                            </div>
+                            <div className="bg-white p-4 rounded-lg border border-purple-100 shadow-sm">
+                                <h4 className="font-bold text-purple-700 mb-2">5. API de Recomendações com ML Básico</h4>
+                                <p className="text-sm text-purple-600 mb-2">Diferencial: Sistema de recomendação usando filtragem colaborativa</p>
+                                <p className="text-xs text-gray-600">Stack: Spring Boot + algoritmos de recomendação + REST</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-6">
+                        <h3 className="text-xl font-bold text-blue-800 mb-3">📚 Recursos Recomendados</h3>
+                        <div className="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <h4 className="font-semibold text-blue-700 mb-3">Cursos Online:</h4>
+                                <ul className="space-y-2 text-blue-600">
+                                    <li>• <strong>Oracle Java Documentation</strong> - Referência oficial</li>
+                                    <li>• <strong>Curso em Video (YouTube)</strong> - Gustavo Guanabara</li>
+                                    <li>• <strong>Udemy: Java Completo</strong> - Nelio Alves</li>
+                                    <li>• <strong>Alura: Formação Java</strong> - Trilha completa</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 className="font-semibold text-blue-700 mb-3">Prática:</h4>
+                                <ul className="space-y-2 text-blue-600">
+                                    <li>• <strong>LeetCode</strong> - Algoritmos e estruturas</li>
+                                    <li>• <strong>HackerRank</strong> - Desafios Java</li>
+                                    <li>• <strong>Exercism.io</strong> - Mentoria gratuita</li>
+                                    <li>• <strong>GitHub</strong> - Portfólio de projetos</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-6 bg-green-50 border border-green-200 rounded-lg p-6">
+                        <h3 className="text-xl font-bold text-green-800 mb-3">🎯 Cronograma Diário Intensivo (7h)</h3>
+                        <div className="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <h4 className="font-semibold text-green-700 mb-2">Estrutura Diária:</h4>
+                                <ul className="space-y-2 text-green-700">
+                                    <li><strong>Manhã (3h):</strong> Teoria + documentação + vídeos</li>
+                                    <li><strong>Tarde (3h):</strong> Prática intensiva + exercícios</li>
+                                    <li><strong>Noite (1h):</strong> Projetos pessoais + revisão</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 className="font-semibold text-green-700 mb-2">Estratégias:</h4>
+                                <ul className="space-y-2 text-green-700">
+                                    <li><strong>Sábados:</strong> Projetos maiores + portfólio</li>
+                                    <li><strong>Domingos:</strong> Revisão semanal + algoritmos</li>
+                                    <li><strong>Meta:</strong> 100+ exercícios/semana (6 primeiras semanas)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+                        <h3 className="text-xl font-bold text-yellow-800 mb-3">⚡ Dicas de Produtividade</h3>
+                        <div className="grid md:grid-cols-3 gap-4">
+                            <div>
+                                <h4 className="font-semibold text-yellow-700 mb-2">🧠 Foco:</h4>
+                                <ul className="text-sm text-yellow-700 space-y-1">
+                                    <li>• Pomodoro 50min + 10min pausa</li>
+                                    <li>• Eliminar distrações</li>
+                                    <li>• Um tópico por vez</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 className="font-semibold text-yellow-700 mb-2">📈 Progresso:</h4>
+                                <ul className="text-sm text-yellow-700 space-y-1">
+                                    <li>• Revisar diariamente este plano</li>
+                                    <li>• Anotar dúvidas</li>
+                                    <li>• Celebrar pequenas vitórias</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 className="font-semibold text-yellow-700 mb-2">🤝 Comunidade:</h4>
+                                <ul className="text-sm text-yellow-700 space-y-1">
+                                    <li>• Discord Java Brasil</li>
+                                    <li>• Stack Overflow</li>
+                                    <li>• LinkedIn networking</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <footer className="mt-8 text-center text-gray-500 text-sm">
+                        <p>💪 Você consegue! Dedique-se 100% por 10 semanas e mude sua vida profissional.</p>
+                        <p className="mt-2">Criado para acelerar sua jornada como desenvolvedor Java 🚀</p>
+                    </footer>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<JavaLearningRoadmap />, document.getElementById('root'));
+    </script>
+</body>
+</html>
